@@ -52,8 +52,8 @@
 
         <div id="hostSetup" class="hidden">
             <h3>Pelin asetukset</h3>
-            <label>Aika (1-120 min):</label>
-            <input type="number" id="startTime" value="25" min="1" max="120">
+            <label>Aika (1-60 min):</label>
+            <input type="number" id="startTime" value="25" min="1" max="60">
             <label>Nimesi:</label>
             <input type="text" id="hostName" value="Isäntä">
             <button class="btn-success" id="createBtn" onclick="initHost()">Vahvista ja luo huone</button>
@@ -125,7 +125,7 @@
 
             <div style="margin-top: 30px; font-size: 0.75rem; border-top: 1px solid #475569; padding-top: 15px; text-align: center; color: #94a3b8; font-style: italic;">
                 <p>Kehitys: Ilkka Keskiväli & Gemini AI Collaboration</p>
-                <p>Versio 2.0.3 - "Long Game Edition"</p>
+                <p>Versio 2.0.3 - "Standard Edition"</p>
             </div>
             
             <button class="btn-primary" style="margin-top: 20px;" onclick="toggleInfo(false)">PALAA PELIIN</button>
@@ -187,7 +187,7 @@
             let timeInput = document.getElementById('startTime');
             let timeVal = parseInt(timeInput.value);
             if (isNaN(timeVal) || timeVal < 1) timeVal = 1;
-            if (timeVal > 120) timeVal = 120; // Sallitaan nyt 120 min
+            if (timeVal > 60) timeVal = 60; 
             
             const btn = document.getElementById('createBtn'); btn.disabled = true;
             const id = Math.random().toString(36).substr(2, 4).toUpperCase();
