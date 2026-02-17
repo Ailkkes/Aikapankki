@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aikapankki P2P Pro</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
+            --danger: #ef4444; --success: #22c55e; --warning: #f59e0b; --text: #f8fafc;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; min-height: 100vh; }
+        .container { width: 100%; max-width: 500px; background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); box-sizing: border-box; position: relative; }
+        .header-area { position: relative; width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        h2 { margin: 0; font-size: 1.5rem; text-align: center; width: 100%; }
+        .info-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: #334155; border: 1px solid var(--accent); color: var(--accent); padding: 4px 10px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.7rem; z-index: 10; width: auto !important; }
+        .hidden { display: none !important; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; max-width: 450px; border: 1px solid var(--accent); max-height: 85vh; overflow-y: auto; width: 90%; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box; }
+        #joinId { text-transform: uppercase; font-weight: bold; letter-spacing: 2px; text-align: center; }
+        .peer-id-display { background: #334155; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px; border: 2px solid var(--accent); }
+        .code-text { font-size: 2.2rem; color: var(--accent); letter-spacing: 5px; font-weight: bold; display: block; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .player-card { padding: 15px 5px; border-radius: 15px; text-align: center; border: 4px solid transparent; transition: all 0.3s; cursor: pointer; position: relative; }
+        .player-card.active { border-color: white; transform: scale(1.02); }
+        .timer { font-size: 1.6rem; font-weight: bold; font-family: monospace; }
+        #chatBox { height: 100px; overflow-y: auto; background: #0f172a; border-radius: 10px; padding: 10px; font-size: 0.8rem; margin-bottom: 10px; border: 1px solid #334155; }
+        button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; text-transform: uppercase; }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .reorder-controls { display: flex; flex-direction: column; gap: 2px; position: absolute; right: 5px; top: 50%; transform: translateY(-50%); }
+        .reorder-btn { width: 30px; height: 30px; padding: 0; font-size: 12px; background: rgba(0,0,0,0.3); color: white; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-area">
+            <h2>Aikapankki</h2>
+            <button class="info-btn" onclick="toggleInfo(true)">INFO</button>
+        </div>
+
+        <div id="menu">
+            <button class="btn-primary" onclick="initAudioAndShowHost()">LUO UUSI PELI</button>
+            <div style="margin: 20px 0; text-align: center; opacity: 0.5;">— LIITY KOODILLA —</div>
+            <input type="text" id="joinId" maxlength="4" placeholder="ESIM. X8K2">
+            <button class="btn-success" onclick="initAudioAndJoin()">LIITY PELIIN</button>
+        </div>
+
+        <div id="hostSetup" class="hidden">
+            <h3>Pelin asetukset</h3>
+            <label>Aika (1-60 min):</label>
+            <input type="number" id="startTime" value="25" min="1" max="60">
+            <label>Nimesi:</label>
+            <input type="text" id="hostName" value="Isäntä">
+            <button class="btn-success" id="createBtn" onclick="initHost()">Vahvista ja luo huone</button>
+        </div>
+
+        <div id="gameRoom" class="hidden">
+            <div class="peer-id-display">
+                <span style="font-size: 0.8rem; opacity: 0.8;">HUONEEN KOODI:</span>
+                <span id="shortCode" class="code-text">....</span>
+            </div>
+            
+            <div id="playerGrid" class="grid"></div>
+            
+            <div id="hostControls" class="hidden">
+                <button class="btn-success" id="startBtn" onclick="showStarterSelection()">VALITSE ALOITTAJA JA ALOITA PELI</button>
+                <button class="btn-primary" id="reorderBtn" onclick="toggleReorderMode()">MUOKKAA JÄRJESTYSTÄ</button>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn-warning hidden" id="pauseBtn" onclick="togglePause()" style="flex: 1;">PAUSE</button>
+                    <button class="btn-success hidden" id="addTimeBtn" onclick="addAllTime(60)" style="flex: 1;">+1 MIN KAIKILLE</button>
+                </div>
+            </div>
+
+            <div id="chatBox"></div>
+            <div style="display:flex; gap:5px; margin-bottom: 10px;">
+                <input type="text" id="chatInput" placeholder="Viesti..." style="margin:0;">
+                <button class="btn-primary" style="width:auto; margin:0; padding: 0 15px;" onclick="sendChat()">SND</button>
+            </div>
+            <button class="btn-danger" style="padding:10px" onclick="location.reload()">POISTU</button>
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal hidden">
+        <div class="modal-content">
+            <h2 style="margin-top:0; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 10px; text-align: center;">Aikapankki Pro - Käyttöopas</h2>
+            
+            <section style="font-size: 0.9rem; line-height: 1.6;">
+                <h3 style="color: var(--success); border-left: 3px solid var(--success); padding-left: 10px; margin-top: 20px;">1. Pelin perusidea</h3>
+                <p>Aikapankki on työkalu lautapelien, väittelyiden ja muiden vuoropohjaisten tilanteiden hallintaan. Jokaisella pelaajalla on oma, rajallinen sekuntimäärä. Kello käy vain vuorossa olevalla pelaajalla.</p>
+                
+                <h3 style="color: var(--success); border-left: 3px solid var(--success); padding-left: 10px; margin-top: 20px;">2. Pelin kulku</h3>
+                <ul style="padding-left: 20px;">
+                    <li><b>Koodi:</b> Isäntä (Host) luo huoneen ja antaa 4-merkkisen koodin muille.</li>
+                    <li><b>Järjestys:</b> Isäntä voi ennen peliä järjestää pelaajat haluttuun kiertoon (nuolinäppäimet).</li>
+                    <li><b>Vuoron vaihtaminen:</b> Napauta omaa pelaajakorttiasi ("Sinä"), kun olet valmis. Vuoro siirtyy seuraavalle listalla olevalle.</li>
+                    <li><b>Putoaminen:</b> Kun aika loppuu (0:00), pelaaja putoaa pelistä ja vuoro hyppää jatkossa hänen ylitseen.</li>
+                </ul>
+
+                <h3 style="color: var(--warning); border-left: 3px solid var(--warning); padding-left: 10px; margin-top: 20px;">3. Isännän (Host) lisäoikeudet</h3>
+                <p>Huoneen luojalla on valta hallita peliä, jos joku unohtaa toimia:</p>
+                <ul style="padding-left: 20px;">
+                    <li><b>Yleisohitus:</b> Isäntä voi vaihtaa vuoroa kenen tahansa pelaajan puolesta napauttamalla kyseistä pelaajakorttia.</li>
+                    <li><b>Lisäaika:</b> Isäntä voi lisätä kaikille elossa oleville pelaajille +1 minuutin yhdellä painalluksella kesken pelin.</li>
+                    <li><b>Pause:</b> Peli voidaan pysäyttää milloin tahansa (esim. sääntöselvitysten ajaksi).</li>
+                </ul>
+
+                <h3 style="color: var(--warning); border-left: 3px solid var(--warning); padding-left: 10px; margin-top: 20px;">4. Äänimerkit</h3>
+                <ul style="padding-left: 20px;">
+                    <li><b>Korkea piippaus (880Hz):</b> Oma vuorosi alkoi.</li>
+                    <li><b>Matala piippaus (440Hz):</b> Uusi viesti chat-ikkunassa.</li>
+                    <li><b>Sireeni:</b> Aikasi loppui kokonaan. Kuuluu vain sinun laitteestasi kerran.</li>
+                </ul>
+
+                <h3 style="color: var(--accent); border-left: 3px solid var(--accent); padding-left: 10px; margin-top: 20px;">5. Tekniset suositukset</h3>
+                <ul style="padding-left: 20px;">
+                    <li><b>Näytön pito:</b> Sovellus käyttää "Wake Lock" -tekniikkaa pitääkseen näytön päällä. Älä silti sulje selainta tai lukitse puhelinta manuaalisesti, jotta yhteys ei katkea.</li>
+                    <li><b>Akku:</b> P2P-yhteys ja päällä oleva näyttö kuluttavat akkua nopeasti. Suosittelemme latausjohtoa.</li>
+                    <li><b>Vakaus:</b> Jos yhteys pätkii, varmista että isäntä pysyy selaimen välilehdellä koko ajan.</li>
+                </ul>
+            </section>
+
+            <div style="margin-top: 30px; font-size: 0.75rem; border-top: 1px solid #475569; padding-top: 15px; text-align: center; color: #94a3b8; font-style: italic;">
+                <p>Kehitys: Ilkka Keskiväli & Gemini AI Collaboration</p>
+                <p>Versio 2.0.2 - "Enhanced Guide Edition"</p>
+            </div>
+            
+            <button class="btn-primary" style="margin-top: 20px;" onclick="toggleInfo(false)">PALAA PELIIN</button>
+        </div>
+    </div>
+
+    <div id="starterModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Kuka aloittaa?</h3>
+            <div id="starterList"></div>
+            <button class="btn-danger" style="margin-top:10px" onclick="document.getElementById('starterModal').classList.add('hidden')">PERUUTA</button>
+        </div>
+    </div>
+
+    <script>
+        let peer = null, connections = [], isHost = false, myName = "", timerInterval = null, wakeLock = null;
+        let gameState = { players: [], activeIndex: null, isStarted: false, isPaused: false, totalTime: 0 };
+        let audioCtx = null, alarmPlayed = false, reorderMode = false;
+
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+            }
+        }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') await requestWakeLock();
+        });
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            requestWakeLock();
+        }
+
+        function initAudioAndShowHost() { initAudio(); showHostSetup(); }
+        function initAudioAndJoin() { initAudio(); joinGame(); }
+
+        function playBeep(freq, duration, type = 'sine') {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playGameOverSound() {
+            if (alarmPlayed) return; alarmPlayed = true;
+            [440, 330, 220].forEach((f, i) => setTimeout(() => playBeep(f, 1.2, 'sawtooth'), i * 600));
+        }
+
+        function toggleInfo(s) { initAudio(); document.getElementById('infoModal').classList.toggle('hidden', !s); }
+        function showHostSetup() { document.getElementById('menu').classList.add('hidden'); document.getElementById('hostSetup').classList.remove('hidden'); }
+
+        function initHost() {
+            let timeInput = document.getElementById('startTime');
+            let timeVal = parseInt(timeInput.value);
+            if (isNaN(timeVal) || timeVal < 1) timeVal = 1;
+            if (timeVal > 60) timeVal = 60;
+            
+            const btn = document.getElementById('createBtn'); btn.disabled = true;
+            const id = Math.random().toString(36).substr(2, 4).toUpperCase();
+            peer = new Peer(id);
+            peer.on('open', (id) => {
+                isHost = true; myName = document.getElementById('hostName').value || "Isäntä";
+                gameState.totalTime = timeVal * 60;
+                gameState.players = [{ name: myName, time: gameState.totalTime, out: false }];
+                document.getElementById('shortCode').innerText = id;
+                document.getElementById('hostSetup').classList.add('hidden');
+                document.getElementById('gameRoom').classList.remove('hidden');
+                document.getElementById('hostControls').classList.remove('hidden');
+                updateUI();
+            });
+            peer.on('connection', (c) => {
+                c.on('open', () => {
+                    connections.push(c);
+                    c.on('data', (data) => {
+                        if (data.type === 'JOIN') { gameState.players.push({ name: data.name, time: gameState.totalTime, out: false }); broadcastState(); }
+                        if (data.type === 'CHAT') { addChatMessage(data.sender, data.text); connections.forEach(conn => conn.send(data)); playBeep(440, 0.2); }
+                        if (data.type === 'TURN_END' && !gameState.isPaused) nextTurn(data.index);
+                    });
+                });
+            });
+        }
+
+        function joinGame() {
+            const id = document.getElementById('joinId').value.toUpperCase();
+            if (id.length !== 4) return alert("Koodi puuttuu!");
+            myName = prompt("Nimesi:") || "Pelaaja";
+            peer = new Peer();
+            peer.on('open', () => {
+                const conn = peer.connect(id);
+                conn.on('open', () => {
+                    conn.send({ type: 'JOIN', name: myName });
+                    document.getElementById('menu').classList.add('hidden');
+                    document.getElementById('gameRoom').classList.remove('hidden');
+                    document.getElementById('shortCode').innerText = id;
+                });
+                conn.on('data', (data) => {
+                    if (data.type === 'STATE') {
+                        const oldIdx = gameState.activeIndex;
+                        const meWasOut = gameState.players.find(p => p.name === myName)?.out;
+                        gameState = data.state; updateUI();
+                        if (oldIdx !== gameState.activeIndex && gameState.players[gameState.activeIndex]?.name === myName) playBeep(880, 0.5);
+                        if (!meWasOut && gameState.players.find(p => p.name === myName)?.out) playGameOverSound();
+                    }
+                    if (data.type === 'CHAT') { addChatMessage(data.sender, data.text); playBeep(440, 0.2); }
+                });
+            });
+        }
+
+        function toggleReorderMode() {
+            reorderMode = !reorderMode;
+            document.getElementById('reorderBtn').innerText = reorderMode ? "VALMIS" : "MUOKKAA JÄRJESTYSTÄ";
+            updateUI();
+        }
+
+        function movePlayer(idx, dir) {
+            if (!isHost || gameState.isStarted) return;
+            const newIdx = idx + dir;
+            if (newIdx < 0 || newIdx >= gameState.players.length) return;
+            const temp = gameState.players[idx];
+            gameState.players[idx] = gameState.players[newIdx];
+            gameState.players[newIdx] = temp;
+            broadcastState();
+        }
+
+        function addAllTime(seconds) {
+            if (!isHost) return;
+            gameState.players.forEach(p => { if (!p.out) p.time += seconds; });
+            broadcastState();
+        }
+
+        function updateUI() {
+            const g = document.getElementById('playerGrid'); g.innerHTML = '';
+            gameState.players.forEach((p, i) => {
+                const ratio = p.time / gameState.totalTime;
+                let color = p.out ? "#475569" : (ratio > 0.5 ? "#22c55e" : (ratio > 0.2 ? "#f59e0b" : "#ef4444"));
+                const card = document.createElement('div');
+                card.className = `player-card ${gameState.activeIndex === i ? 'active' : ''}`;
+                card.style.backgroundColor = color;
+                card.onclick = () => { if(!reorderMode && (p.name === myName || isHost)) handleCardClick(i); };
+                
+                let html = `<div style="font-size:0.8rem; font-weight:bold;">${p.name} ${p.name === myName ? '(Sinä)' : ''}</div><div class="timer">${Math.floor(p.time/60)}:${(p.time%60).toString().padStart(2,'0')}</div>`;
+                
+                if (reorderMode && isHost && !gameState.isStarted) {
+                    html += `<div class="reorder-controls">
+                        <button class="reorder-btn" onclick="movePlayer(${i}, -1); event.stopPropagation();">▲</button>
+                        <button class="reorder-btn" onclick="movePlayer(${i}, 1); event.stopPropagation();">▼</button>
+                    </div>`;
+                }
+                card.innerHTML = html;
+                g.appendChild(card);
+            });
+            if (isHost && gameState.isStarted) {
+                document.getElementById('pauseBtn').classList.toggle('hidden', false);
+                document.getElementById('addTimeBtn').classList.toggle('hidden', false);
+                document.getElementById('reorderBtn').classList.add('hidden');
+                document.getElementById('pauseBtn').innerText = gameState.isPaused ? "JATKA" : "PAUSE";
+            }
+        }
+
+        function showStarterSelection() {
+            const list = document.getElementById('starterList'); list.innerHTML = '';
+            gameState.players.forEach((p, i) => {
+                const b = document.createElement('button'); b.className = 'starter-btn'; b.innerText = p.name;
+                b.onclick = () => { document.getElementById('starterModal').classList.add('hidden'); broadcastStart(i); };
+                list.appendChild(b);
+            });
+            document.getElementById('starterModal').classList.remove('hidden');
+        }
+
+        function handleCardClick(i) {
+            if (!gameState.isStarted || gameState.isPaused || gameState.activeIndex !== i) return;
+            if (isHost) nextTurn(i); else peer.connections[Object.keys(peer.connections)[0]][0].send({ type: 'TURN_END', index: i });
+        }
+
+        function nextTurn(idx) {
+            let n = (idx + 1) % gameState.players.length;
+            let l = 0; while (gameState.players[n].out && l < gameState.players.length) { n = (n + 1) % gameState.players.length; l++; }
+            if (l < gameState.players.length) startTimer(n);
+        }
+
+        function startTimer(idx) {
+            clearInterval(timerInterval); gameState.activeIndex = idx; broadcastState();
+            timerInterval = setInterval(() => {
+                if (!gameState.isPaused && gameState.players[gameState.activeIndex].time > 0) {
+                    gameState.players[gameState.activeIndex].time--;
+                    if (gameState.players[gameState.activeIndex].time % 5 === 0) broadcastState();
+                    updateUI();
+                } else if (!gameState.isPaused) { 
+                    gameState.players[gameState.activeIndex].out = true;
+                    if (gameState.players[gameState.activeIndex].name === myName) playGameOverSound();
+                    broadcastState(); nextTurn(gameState.activeIndex); 
+                }
+            }, 1000);
+        }
+
+        function broadcastStart(i) { gameState.isStarted = true; document.getElementById('startBtn').classList.add('hidden'); startTimer(i); }
+        function togglePause() { gameState.isPaused = !gameState.isPaused; broadcastState(); }
+        function broadcastState() { if (isHost) { connections.forEach(c => c.send({ type: 'STATE', state: gameState })); updateUI(); } }
+        function addChatMessage(s, t) { const b = document.getElementById('chatBox'); const m = document.createElement('div'); m.innerHTML = `<b>${s}:</b> ${t}`; b.appendChild(m); b.scrollTop = b.scrollHeight; }
+        function sendChat() {
+            const i = document.getElementById('chatInput'); if (!i.value.trim()) return;
+            const d = { type: 'CHAT', sender: myName, text: i.value };
+            if (isHost) { addChatMessage(myName, i.value); connections.forEach(c => c.send(d)); } 
+            else { peer.connections[Object.keys(peer.connections)[0]][0].send(d); }
+            i.value = "";
+        }
+    </script>
+</body>
+</html>
