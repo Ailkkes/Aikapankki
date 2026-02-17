@@ -188,7 +188,7 @@
             let timeInput = document.getElementById('startTime');
             let timeVal = parseInt(timeInput.value);
             if (isNaN(timeVal) || timeVal < 1) timeVal = 1;
-            if (timeVal > 60) timeVal = 60;
+            if (timeVal > 120) timeVal = 120;
             
             const btn = document.getElementById('createBtn'); btn.disabled = true;
             const id = Math.random().toString(36).substr(2, 4).toUpperCase();
