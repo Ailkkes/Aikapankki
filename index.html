@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aikapankki P2P Ultra v3.7 - Complete Manual</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
     <style>
         :root {
             --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
@@ -54,10 +55,10 @@
         </div>
 
         <div id="menu">
-            <button class="btn-primary" onclick="initAudio(); showHostSetup()">LUO UUSI PELI</button>
+            <button class="btn-primary" onclick="initAllResources(); showHostSetup()">LUO UUSI PELI</button>
             <div style="margin: 15px 0; text-align: center; opacity: 0.5;">— LIITY KOODILLA —</div>
             <input type="text" id="joinId" maxlength="4" placeholder="ESIM. A1B2" style="text-align:center">
-            <button class="btn-success" onclick="initAudio(); joinGame()">LIITY PELIIN</button>
+            <button class="btn-success" onclick="initAllResources(); joinGame()">LIITY PELIIN</button>
         </div>
 
         <div id="hostSetup" class="hidden">
@@ -156,13 +157,14 @@
                 <h3><span class="info-badge">INFO</span> Projektin Tiedot</h3>
                 <p><b>Pääkehittäjä:</b> Ilkka Keskiväli</p>
                 <p><b>AI-Arkkitehti:</b> Gemini AI (Google)</p>
-                <p><b>Tekniikat:</b> HTML5, CSS3, JS (ES6), PeerJS, Web Speech API.</p>
+                <p><b>Tekniikat:</b> HTML5, CSS3, JS (ES6), PeerJS, Web Speech API, NoSleep.</p>
                 <div class="changelog">
-                    v3.7.0 (Helmikuu 2026):<br>
+                    v3.7.1 (Helmikuu 2026):<br>
                     + Maksimaalinen Info-sivu<br>
                     + Puhevaroitukset suomeksi<br>
                     + Pelikohtaiset esiasetukset<br>
-                    + Paranneltu P2P-synkronointi
+                    + Paranneltu P2P-synkronointi<br>
+                    + Lisätty WakeLock
                 </div>
             </div>
 
@@ -191,6 +193,17 @@
         let gameState = { players: [], activeIndex: null, isStarted: false, isPaused: false, totalTime: 0, bonus: 0 };
         let audioCtx = null;
         let lastKnownActiveIndex = null;
+
+        const noSleep = new NoSleep();
+
+        function initAllResources() {
+        // Aktivoi ääni, jos se ei ole jo aktiivinen
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+        // Aktivoi NoSleep (vaatii käyttäjän klikkauksen)
+        noSleep.enable();
+        console.log("Näytön päälläpito aktivoitu.");
+        }
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
         function toggleInfo(s) { document.getElementById('infoModal').classList.toggle('hidden', !s); }
@@ -313,6 +326,7 @@
         }
 
         function showStats() {
+            noSleep.disable(); // Sallii näytön sammua jälleen
             clearInterval(timerInterval);
             const content = document.getElementById('statsContent');
             let tableHTML = `<table style="width:100%; border-collapse:collapse; color:white; font-size:0.9rem;">
