@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aikapankki Ultra v3.7.1</title>
+    <title>Aikapankki Ultra v3.7.2</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
     <style>
@@ -79,8 +79,14 @@
         </div>
 
         <div id="gameRoom" class="hidden">
-            <div style="text-align: center; margin-bottom: 10px;">
-                <span id="shortCode" style="font-size: 2.2rem; color: var(--accent); font-weight: bold; letter-spacing: 5px;">----</span>
+            <div style="text-align: center; margin-bottom: 15px;">
+                <div style="display: inline-block; border: 2px dashed var(--accent); padding: 5px 15px; border-radius: 10px; margin-bottom: 10px;">
+                <span id="shortCode" style="font-size: 1.8rem; color: var(--accent); font-weight: bold; letter-spacing: 5px;">----</span>
+                </div>
+                <div id="totalGameClock" style="font-size: 2.5rem; font-family: monospace; font-weight: bold; color: white; text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);">
+                    00:00:00
+                </div>
+                <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.6;">Pelin kokonaiskesto</div>
             </div>
             <div id="playerGrid" class="grid"></div>
             <div id="hostControls" class="hidden">
@@ -159,12 +165,14 @@
                 <p><b>AI-Arkkitehti:</b> Gemini AI (Google)</p>
                 <p><b>Tekniikat:</b> HTML5, CSS3, JS (ES6), PeerJS, Web Speech API, NoSleep.</p>
                 <div class="changelog">
-                    v3.7.1 (Helmikuu 2026):<br>
+                    v3.7.2 (Helmikuu 2026):<br>
                     + Maksimaalinen Info-sivu<br>
                     + Puhevaroitukset suomeksi<br>
                     + Pelikohtaiset esiasetukset<br>
                     + Paranneltu P2P-synkronointi<br>
-                    + Lisätty WakeLock
+                    + WakeLock<br>
+                    + Pelikello<br>
+                    + Prosentit tilastoihin
                 </div>
             </div>
 
@@ -190,7 +198,7 @@
     <script>
         // Logiikka pysyy samana (v3.6.1 pohjalta), jotta kaikki toiminnot säilyvät
         let peer = null, connections = [], isHost = false, myName = "", timerInterval = null;
-        let gameState = { players: [], activeIndex: null, isStarted: false, isPaused: false, totalTime: 0, bonus: 0 };
+        let gameState = { players: [], activeIndex: null, isStarted: false, isPaused: false, totalTime: 0, bonus: 0, globalSeconds: 0 }; // Lisätty globalSeconds
         let audioCtx = null;
         let lastKnownActiveIndex = null;
 
@@ -314,6 +322,7 @@
                 let p = gameState.players[gameState.activeIndex];
                 if (p.time > 0) {
                     p.time--; p.usedTotal++;
+                    gameState.globalSeconds++;
                     if (p.name === myName) checkVoiceWarnings();
                     if (p.time % 5 === 0) broadcastState();
                     updateUI();
@@ -329,21 +338,30 @@
             noSleep.disable(); // Sallii näytön sammua jälleen
             clearInterval(timerInterval);
             const content = document.getElementById('statsContent');
-            let tableHTML = `<table style="width:100%; border-collapse:collapse; color:white; font-size:0.9rem;">
+            
+            // Lasketaan kaikkien pelaajien yhteensä käyttämä aika prosentteja varten
+            const totalUsedByAll = gameState.players.reduce((sum, p) => sum + p.usedTotal, 0);
+
+            let tableHTML = `<table style="width:100%; border-collapse:collapse; color:white; font-size:0.8rem;">
                 <tr style="border-bottom: 2px solid var(--accent);">
-                    <th style="padding:10px; text-align:left;">Pelaaja</th>
-                    <th style="padding:10px; text-align:left;">Käyttö</th>
-                    <th style="padding:10px; text-align:left;">Kesk/siirto</th>
+                    <th style="padding:8px; text-align:left;">Pelaaja</th>
+                    <th style="padding:8px; text-align:left;">Aika</th>
+                    <th style="padding:8px; text-align:center;">Osuus %</th>
+                    <th style="padding:8px; text-align:right;">Kesk/siirto</th>
                 </tr>`;
+
             gameState.players.forEach(p => {
                 const avg = p.turns > 0 ? Math.round(p.usedTotal / p.turns) : 0;
+                const percent = totalUsedByAll > 0 ? Math.round((p.usedTotal / totalUsedByAll) * 100) : 0;
+                
                 tableHTML += `<tr style="border-bottom:1px solid #334155;">
-                    <td style="padding:10px;">${p.name}</td>
-                    <td style="padding:10px;">${Math.floor(p.usedTotal/60)}m ${p.usedTotal%60}s</td>
-                    <td style="padding:10px;">${avg}s</td>
+                    <td style="padding:8px;">${p.name}</td>
+                    <td style="padding:8px;">${Math.floor(p.usedTotal/60)}m ${p.usedTotal%60}s</td>
+                    <td style="padding:8px; text-align:center; color:var(--accent); font-weight:bold;">${percent}%</td>
+                    <td style="padding:8px; text-align:right;">${avg}s</td>
                 </tr>`;
             });
-            content.innerHTML = tableHTML + `</table>`;
+            content.innerHTML = tableHTML + `</table><div style="margin-top:15px; text-align:center; font-size:0.8rem; opacity:0.7;">Pelin kokonaiskesto: ${Math.floor(gameState.globalSeconds/60)} min ${gameState.globalSeconds%60} sek</div>`;
             document.getElementById('statsModal').classList.remove('hidden');
             if (isHost) connections.forEach(c => c.send({ type: 'SHOW_STATS', state: gameState }));
         }
@@ -364,6 +382,12 @@
                 `;
                 g.appendChild(card);
             });
+            // Päivitä yhteinen pelikello (HH:MM:SS)
+            const gH = Math.floor(gameState.globalSeconds / 3600);
+            const gM = Math.floor((gameState.globalSeconds % 3600) / 60);
+            const gS = gameState.globalSeconds % 60;
+            document.getElementById('totalGameClock').innerText = 
+            `${gH.toString().padStart(2, '0')}:${gM.toString().padStart(2, '0')}:${gS.toString().padStart(2, '0')}`;
         }
 
         function broadcastState() { if (isHost) { connections.forEach(c => c.send({ type: 'STATE', state: gameState })); updateUI(); } }
