@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aikapankki Ultra v3.7.2</title>
+    <title>Aikapankki Ultra v3.7.3</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
     <style>
@@ -76,13 +76,23 @@
             <label>Oma nimi:</label>
             <input type="text" id="hostName" placeholder="Isäntä">
             <button class="btn-success" onclick="initHost()">AVAA HUONE</button>
+            <button class="btn-danger" style="background: transparent; border: 1px solid var(--danger); margin-top: 15px;" onclick="cancelHostSetup()">TAKASIN ALKUUN</button>
         </div>
 
         <div id="gameRoom" class="hidden">
             <div style="text-align: center; margin-bottom: 15px;">
-                <div style="display: inline-block; border: 2px dashed var(--accent); padding: 5px 15px; border-radius: 10px; margin-bottom: 10px;">
-                <span id="shortCode" style="font-size: 1.8rem; color: var(--accent); font-weight: bold; letter-spacing: 5px;">----</span>
+                <div onclick="copyRoomCode()" style="display: inline-block; border: 2px dashed var(--accent); padding: 5px 15px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; position: relative;">
+                    <span id="shortCode" style="font-size: 1.8rem; color: var(--accent); font-weight: bold; letter-spacing: 5px;">----</span>
+                    <div id="copyTooltip" style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 5px; display: none; white-space: nowrap;">KOPIOITU!</div>
                 </div>
+                
+                <div id="shareBtnContainer" class="hidden" style="margin-bottom: 15px;">
+                    <button onclick="shareGame()" style="width: auto; padding: 8px 20px; font-size: 0.8rem; background: #334155; border: 1px solid var(--accent); color: var(--accent); border-radius: 50px; display: inline-flex; align-items: center; gap: 8px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                        JAA KOODI
+                    </button>
+                </div>
+
                 <div id="totalGameClock" style="font-size: 2.5rem; font-family: monospace; font-weight: bold; color: white; text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);">
                     00:00:00
                 </div>
@@ -102,6 +112,7 @@
                 <button class="btn-primary" style="width:auto; margin:0;" onclick="sendChat()">SND</button>
             </div>
             <button class="btn-danger" style="font-size: 0.8rem;" onclick="confirmExit()">LOPETA JA TILASTOT</button>
+            <button class="btn-danger" style="background: transparent; border: 1px solid var(--danger); margin-top: 10px; font-size: 0.8rem;" onclick="location.reload()">PERUUTA JA POISTU</button>
         </div>
     </div>
 
@@ -165,7 +176,7 @@
                 <p><b>AI-Arkkitehti:</b> Gemini AI (Google)</p>
                 <p><b>Tekniikat:</b> HTML5, CSS3, JS (ES6), PeerJS, Web Speech API, NoSleep.</p>
                 <div class="changelog">
-                    v3.7.2 (Helmikuu 2026):<br>
+                    v3.7.3 (Helmikuu 2026):<br>
                     + Maksimaalinen Info-sivu<br>
                     + Puhevaroitukset suomeksi<br>
                     + Pelikohtaiset esiasetukset<br>
@@ -185,7 +196,27 @@
                 </p>
                 <p style="font-size: 0.8rem; font-style: italic; opacity: 0.8;">Mainitse viestissä käyttämäsi laite ja selain (esim. iPhone / Safari).</p>
             </div>
-            
+
+            <div style="text-align: center; margin-top: 25px; padding: 20px; border: 1px solid #253b80; background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                <div style="margin-bottom: 12px; font-size: 0.85rem; color: #cbd5e1; font-weight: 500;">
+                    Tarjoa kehittäjälle kierros tai tue ylläpitoa:
+                </div>
+                <a href="https://www.paypal.com/donate/?hosted_button_id=LC84JJ5JV9BB6" target="_blank" style="text-decoration: none; display: inline-block;">
+                    <div style="background: #0070ba; color: white; padding: 12px 25px; border-radius: 50px; font-weight: bold; display: flex; align-items: center; gap: 10px; transition: transform 0.2s, background 0.2s; border: 2px solid #005ea6;" 
+                         onmouseover="this.style.background='#005ea6'; this.style.transform='scale(1.05)';" 
+                         onmouseout="this.style.background='#0070ba'; this.style.transform='scale(1)';" >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 21L7.9 15.1H6.3C5.5 15.1 4.8 14.5 4.7 13.7L3.1 3.7C3 3 3.5 2.4 4.2 2.4H13.6C16.8 2.4 19.1 3.1 20.2 4.6C20.9 5.5 21.1 6.7 20.8 8.1C20.3 11.2 18.5 13.1 15.7 13.1H13.1L11.9 20.1C11.8 20.6 11.4 21 10.9 21H7Z"/>
+                        </svg>
+                        PayPal.me
+                    </div>
+                </a>
+                <div style="margin-top: 10px; font-size: 0.7rem; opacity: 0.5; color: #f8fafc;">
+                    Turvallinen maksu PayPalin kautta
+                </div>
+            </div>
+
+
             <button class="btn-primary" style="margin-top:20px;" onclick="toggleInfo(false)">SULJE JA PALAA PELIIN</button>
         </div>
     </div>
@@ -248,6 +279,7 @@
                 document.getElementById('hostSetup').classList.add('hidden');
                 document.getElementById('gameRoom').classList.remove('hidden');
                 document.getElementById('hostControls').classList.remove('hidden');
+                document.getElementById('shareBtnContainer').classList.remove('hidden');
                 updateUI();
             });
             peer.on('connection', (c) => {
@@ -264,6 +296,7 @@
         }
 
         function joinGame() {
+            window.history.replaceState({}, document.title, window.location.pathname);
             const id = document.getElementById('joinId').value.toUpperCase();
             if (id.length !== 4) return alert("Koodi!");
             myName = prompt("Nimesi:") || "Pelaaja";
@@ -371,7 +404,21 @@
                     <td style="padding:8px; text-align:right;">${avg}s</td>
                 </tr>`;
             });
-            content.innerHTML = tableHTML + `</table><div style="margin-top:15px; text-align:center; font-size:0.8rem; opacity:0.7;">Pelin kokonaiskesto: ${Math.floor(gameState.globalSeconds/60)} min ${gameState.globalSeconds%60} sek</div>`;
+            // Lasketaan pelin kesto ja lisätään taulukon perään PayPal-painike
+            const durationText = `<div style="margin-top:15px; text-align:center; font-size:0.8rem; opacity:0.7;">Pelin kokonaiskesto: ${Math.floor(gameState.globalSeconds/60)} min ${gameState.globalSeconds%60} sek</div>`;
+
+            const paypalSection = `
+            <div style="text-align: center; margin-top: 25px; padding: 15px; border: 1px dashed #253b80; background: rgba(30, 41, 59, 0.5); border-radius: 15px;">
+                <div style="margin-bottom: 10px; font-size: 0.8rem; color: #cbd5e1;">Piditkö sovelluksesta? Tue ylläpitoa:</div>
+                <a href="https://www.paypal.com/donate/?hosted_button_id=LC84JJ5JV9BB6" target="_blank" style="text-decoration: none; display: inline-block;">
+                    <div style="background: #0070ba; color: white; padding: 10px 20px; border-radius: 50px; font-weight: bold; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M7 21L7.9 15.1H6.3C5.5 15.1 4.8 14.5 4.7 13.7L3.1 3.7C3 3 3.5 2.4 4.2 2.4H13.6C16.8 2.4 19.1 3.1 20.2 4.6C20.9 5.5 21.1 6.7 20.8 8.1C20.3 11.2 18.5 13.1 15.7 13.1H13.1L11.9 20.1C11.8 20.6 11.4 21 10.9 21H7Z"/></svg>
+                        PayPal.me
+                    </div>
+                </a>
+            </div>`;
+
+content.innerHTML = tableHTML + `</table>` + durationText + paypalSection;
             document.getElementById('statsModal').classList.remove('hidden');
             if (isHost) connections.forEach(c => c.send({ type: 'SHOW_STATS', state: gameState }));
         }
@@ -410,6 +457,75 @@
         function addChatMessage(s, t) { const b = document.getElementById('chatBox'); const m = document.createElement('div'); m.innerHTML = `<span style="color:var(--accent)">${s}:</span> ${t}`; b.appendChild(m); b.scrollTop = b.scrollHeight; }
         function showStarterSelection() { const list = document.getElementById('starterList'); list.innerHTML = '<h3>Kuka aloittaa?</h3>'; gameState.players.forEach((p, i) => { const b = document.createElement('button'); b.className = 'btn-primary'; b.innerText = p.name; b.onclick = () => { document.getElementById('starterModal').classList.add('hidden'); startTimer(i); document.getElementById('startBtn').classList.add('hidden'); }; list.appendChild(b); }); document.getElementById('starterModal').classList.remove('hidden'); }
         function confirmExit() { if(confirm("Lopetetaanko peli? Tilastot näytetään kaikille.")) showStats(); }
+        function cancelHostSetup() {
+    document.getElementById('hostSetup').classList.add('hidden');
+    document.getElementById('menu').classList.remove('hidden');
+}
+
+        function copyRoomCode() {
+    const code = document.getElementById('shortCode').innerText;
+    if (code === "----") return; // Älä kopioi, jos peliä ei ole vielä luotu
+
+    // Kopioidaan teksti leikepöydälle
+    navigator.clipboard.writeText(code).then(() => {
+        const tooltip = document.getElementById('copyTooltip');
+        
+        // Näytetään "KOPIOITU!" -ilmoitus
+        tooltip.style.display = 'block';
+        
+        // Soitetaan pieni vahvistusääni (valinnainen)
+        if (audioCtx) playBeep(660, 0.05);
+
+        // Piilotetaan ilmoitus 2 sekunnin kuluttua
+        setTimeout(() => {
+            tooltip.style.display = 'none';
+        }, 2000);
+    }).catch(err => {
+        console.error('Kopiointi epäonnistui: ', err);
+    });
+}
+
+async function shareGame() {
+    const code = document.getElementById('shortCode').innerText;
+    // Rakennetaan suora liittymislinkki
+    const joinLink = window.location.origin + window.location.pathname + '?room=' + code;
+    
+    const shareData = {
+        title: 'Aikapankki Ultra',
+        text: `Tule mukaan peliin! Huoneen koodi on: ${code}\n\nLiity suoraan tästä:`,
+        url: joinLink
+    };
+
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            navigator.clipboard.writeText(joinLink);
+            alert("Suora liittymislinkki kopioitu leikepöydälle!");
+        }
+    } catch (err) {
+        console.log('Jako epäonnistui', err);
+    }
+}
+
+        // Tarkistetaan URL-parametrit heti kun sivu latautuu
+window.addEventListener('load', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomFromUrl = urlParams.get('room');
+    
+    if (roomFromUrl) {
+        const joinInput = document.getElementById('joinId');
+        if (joinInput) {
+            joinInput.value = roomFromUrl.toUpperCase();
+            // Korostetaan kenttää hetki, jotta käyttäjä huomaa koodin olevan siinä
+            joinInput.style.borderColor = 'var(--success)';
+            joinInput.style.boxShadow = '0 0 10px var(--success)';
+            
+            // Valinnainen: Voit jopa rullata näkymän suoraan liittymisnappiin
+            joinInput.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+});
     </script>
 </body>
 </html>
