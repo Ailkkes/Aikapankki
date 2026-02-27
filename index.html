@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aikapankki Ultra v3.7.3</title>
+    <title>Aikapankki Ultra v3.7.4</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
     <style>
@@ -75,6 +75,10 @@
             <input type="number" id="bonusTime" value="0">
             <label>Oma nimi:</label>
             <input type="text" id="hostName" placeholder="Isäntä">
+            <div id="recoveryZone" class="hidden" style="margin-bottom: 20px; padding: 10px; border: 1px dashed var(--warning); border-radius: 10px; background: rgba(245, 158, 11, 0.1);">
+    <p style="font-size: 0.8rem; color: var(--warning); margin-bottom: 8px;">Löytyi kesken jäänyt peli!</p>
+    <button class="btn-warning" onclick="recoverGame()" style="padding: 8px 15px; font-size: 0.8rem;">PALAUTA EDELLINEN TILANNE</button>
+</div>
             <button class="btn-success" onclick="initHost()">AVAA HUONE</button>
             <button class="btn-danger" style="background: transparent; border: 1px solid var(--danger); margin-top: 15px;" onclick="cancelHostSetup()">TAKASIN ALKUUN</button>
         </div>
@@ -178,7 +182,7 @@
                 <p><b>AI-Arkkitehti:</b> Gemini AI (Google)</p>
                 <p><b>Tekniikat:</b> HTML5, CSS3, JS (ES6), PeerJS, Web Speech API, NoSleep.</p>
                 <div class="changelog">
-                    v3.7.3 (Helmikuu 2026):<br>
+                    v3.7.4 (Helmikuu 2026):<br>
                     + Maksimaalinen Info-sivu<br>
                     + Puhevaroitukset suomeksi<br>
                     + Pelikohtaiset esiasetukset<br>
@@ -497,7 +501,8 @@ content.innerHTML = tableHTML + `</table>` + durationText + paypalSection;
             `${gH.toString().padStart(2, '0')}:${gM.toString().padStart(2, '0')}:${gS.toString().padStart(2, '0')}`;
         }
 
-        function broadcastState() { if (isHost) { connections.forEach(c => c.send({ type: 'STATE', state: gameState })); updateUI(); } }
+        function broadcastState() { if (isHost) { connections.forEach(c => c.send({ type: 'STATE', state: gameState })); updateUI(); // Tallennetaan tilanne selaimen muistiin palautusta varten
+        localStorage.setItem('aikapankki_recovery', JSON.stringify(gameState)); } }
         function playBeep(f, d) { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = f; g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d); o.start(); o.stop(audioCtx.currentTime + d); }
         function togglePause() { gameState.isPaused = !gameState.isPaused; document.getElementById('pauseBtn').innerText = gameState.isPaused ? "JATKA" : "PAUSE"; broadcastState(); }
         function addAllTime(s) { gameState.players.forEach(p => { if(!p.out) p.time += s; }); broadcastState(); }
@@ -588,6 +593,51 @@ window.addEventListener('load', () => {
         }
     }
 });
+
+        
+        window.onbeforeunload = function(e) {
+    if (gameState.isStarted && !gameState.isPaused) {
+        const msg = "Peli on kesken! Jos lataat sivun uudelleen, huone sulkeutuu ja yhteys katkeaa.";
+        e.returnValue = msg;
+        return msg;
+    }
+};
+
+
+        // Tarkista löytyykö palautettavaa peliä kun sivu latautuu
+window.addEventListener('load', () => {
+    const saved = localStorage.getItem('aikapankki_recovery');
+    if (saved) {
+        const recoveredData = JSON.parse(saved);
+        // Näytetään palautusnappi vain jos peli oli oikeasti käynnissä
+        if (recoveredData.isStarted && recoveredData.players.length > 0) {
+            document.getElementById('recoveryZone').classList.remove('hidden');
+        }
+    }
+});
+
+function recoverGame() {
+    const saved = localStorage.getItem('aikapankki_recovery');
+    if (!saved) return;
+
+    const recoveredData = JSON.parse(saved);
+    
+    // Täytetään lomakkeen kentät vanhoilla arvoilla
+    document.getElementById('totalTime').value = Math.floor(recoveredData.totalTime / 60);
+    document.getElementById('bonusTime').value = recoveredData.bonus;
+    
+    // Luodaan huone uudelleen
+    initHost();
+    
+    // Korvataan tyhjä gameState palautetulla datalla
+    gameState = recoveredData;
+    gameState.isPaused = true; // Pysäytetään peli heti palautuksen jälkeen
+    
+    alert("Peli palautettu! Pyydä pelaajia liittymään uudella koodilla. Pelaajien nimet ja ajat on säilytetty.");
+    
+    document.getElementById('recoveryZone').classList.add('hidden');
+}
+
     </script>
 </body>
 </html>
