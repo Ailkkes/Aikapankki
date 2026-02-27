@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aikapankki Ultra v3.7.3</title>
+    <title>Aikapankki P2P Ultra v3.7 - Complete Manual</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
     <style>
         :root {
             --bg: #0f172a; --card: #1e293b; --accent: #38bdf8;
@@ -55,10 +54,10 @@
         </div>
 
         <div id="menu">
-            <button class="btn-primary" onclick="initAllResources(); showHostSetup()">LUO UUSI PELI</button>
+            <button class="btn-primary" onclick="initAudio(); showHostSetup()">LUO UUSI PELI</button>
             <div style="margin: 15px 0; text-align: center; opacity: 0.5;">— LIITY KOODILLA —</div>
             <input type="text" id="joinId" maxlength="4" placeholder="ESIM. A1B2" style="text-align:center">
-            <button class="btn-success" onclick="initAllResources(); joinGame()">LIITY PELIIN</button>
+            <button class="btn-success" onclick="initAudio(); joinGame()">LIITY PELIIN</button>
         </div>
 
         <div id="hostSetup" class="hidden">
@@ -76,27 +75,11 @@
             <label>Oma nimi:</label>
             <input type="text" id="hostName" placeholder="Isäntä">
             <button class="btn-success" onclick="initHost()">AVAA HUONE</button>
-            <button class="btn-danger" style="background: transparent; border: 1px solid var(--danger); margin-top: 15px;" onclick="cancelHostSetup()">TAKASIN ALKUUN</button>
         </div>
 
         <div id="gameRoom" class="hidden">
-            <div style="text-align: center; margin-bottom: 15px;">
-                <div onclick="copyRoomCode()" style="display: inline-block; border: 2px dashed var(--accent); padding: 5px 15px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; position: relative;">
-                    <span id="shortCode" style="font-size: 1.8rem; color: var(--accent); font-weight: bold; letter-spacing: 5px;">----</span>
-                    <div id="copyTooltip" style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 5px; display: none; white-space: nowrap;">KOPIOITU!</div>
-                </div>
-                
-                <div id="shareBtnContainer" class="hidden" style="margin-bottom: 15px;">
-                    <button onclick="shareGame()" style="width: auto; padding: 8px 20px; font-size: 0.8rem; background: #334155; border: 1px solid var(--accent); color: var(--accent); border-radius: 50px; display: inline-flex; align-items: center; gap: 8px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-                        JAA KOODI
-                    </button>
-                </div>
-
-                <div id="totalGameClock" style="font-size: 2.5rem; font-family: monospace; font-weight: bold; color: white; text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);">
-                    00:00:00
-                </div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.6;">Pelin kokonaiskesto</div>
+            <div style="text-align: center; margin-bottom: 10px;">
+                <span id="shortCode" style="font-size: 2.2rem; color: var(--accent); font-weight: bold; letter-spacing: 5px;">----</span>
             </div>
             <div id="playerGrid" class="grid"></div>
             <div id="hostControls" class="hidden">
@@ -111,10 +94,7 @@
                 <input type="text" id="chatInput" placeholder="Viesti..." style="margin:0;">
                 <button class="btn-primary" style="width:auto; margin:0;" onclick="sendChat()">SND</button>
             </div>
-           <button id="hostExitBtn" class="btn-danger hidden" style="font-size: 0.8rem;" onclick="confirmExit()">LOPETA JA TILASTOT</button>
-
-            <button id="playerExitBtn" class="btn-danger hidden" style="font-size: 0.8rem; background: transparent; border: 1px solid var(--danger);" onclick="exitAndReload()">POISTU HUONEESTA</button>
-            <button id="cancelRoomBtn" class="btn-danger hidden" style="background: transparent; border: 1px solid var(--danger); margin-top: 10px; font-size: 0.8rem;" onclick="location.reload()">PERUUTA JA LOPETA HUONE</button>
+            <button class="btn-danger" style="font-size: 0.8rem;" onclick="confirmExit()">LOPETA JA TILASTOT</button>
         </div>
     </div>
 
@@ -176,48 +156,15 @@
                 <h3><span class="info-badge">INFO</span> Projektin Tiedot</h3>
                 <p><b>Pääkehittäjä:</b> Ilkka Keskiväli</p>
                 <p><b>AI-Arkkitehti:</b> Gemini AI (Google)</p>
-                <p><b>Tekniikat:</b> HTML5, CSS3, JS (ES6), PeerJS, Web Speech API, NoSleep.</p>
+                <p><b>Tekniikat:</b> HTML5, CSS3, JS (ES6), PeerJS, Web Speech API.</p>
                 <div class="changelog">
-                    v3.7.3 (Helmikuu 2026):<br>
+                    v3.7.0 (Helmikuu 2026):<br>
                     + Maksimaalinen Info-sivu<br>
                     + Puhevaroitukset suomeksi<br>
                     + Pelikohtaiset esiasetukset<br>
-                    + Paranneltu P2P-synkronointi<br>
-                    + WakeLock<br>
-                    + Pelikello<br>
-                    + Prosentit tilastoissa
+                    + Paranneltu P2P-synkronointi
                 </div>
             </div>
-            
-            <div class="info-section" style="border-left-color: var(--success); background: rgba(34, 197, 94, 0.05); padding: 15px; border-radius: 0 10px 10px 0;">
-                <h3><span class="info-badge" style="border-color: var(--success); color: var(--success);">FEEDBACK</span> Palaute & Kehitysideat</h3>
-                <p>Onko sinulla parannusehdotuksia tai löysitkö bugin? Arvostamme kaikkea palautetta pelikokemuksen parantamiseksi.</p>
-                <p>
-                    <span class="highlight">Sähköposti:</span> 
-                    <a href="mailto:ilkkes@gmail.com" style="color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent);">ilkkes@gmail.com</a>
-                </p>
-                <p style="font-size: 0.8rem; font-style: italic; opacity: 0.8;">Mainitse viestissä käyttämäsi laite ja selain (esim. iPhone / Safari).</p>
-            </div>
-
-            <div style="text-align: center; margin-top: 25px; padding: 20px; border: 1px solid #253b80; background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                <div style="margin-bottom: 12px; font-size: 0.85rem; color: #cbd5e1; font-weight: 500;">
-                    Tarjoa kehittäjälle kierros tai tue ylläpitoa:
-                </div>
-                <a href="https://www.paypal.com/donate/?hosted_button_id=LC84JJ5JV9BB6" target="_blank" style="text-decoration: none; display: inline-block;">
-                    <div style="background: #0070ba; color: white; padding: 12px 25px; border-radius: 50px; font-weight: bold; display: flex; align-items: center; gap: 10px; transition: transform 0.2s, background 0.2s; border: 2px solid #005ea6;" 
-                         onmouseover="this.style.background='#005ea6'; this.style.transform='scale(1.05)';" 
-                         onmouseout="this.style.background='#0070ba'; this.style.transform='scale(1)';" >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M7 21L7.9 15.1H6.3C5.5 15.1 4.8 14.5 4.7 13.7L3.1 3.7C3 3 3.5 2.4 4.2 2.4H13.6C16.8 2.4 19.1 3.1 20.2 4.6C20.9 5.5 21.1 6.7 20.8 8.1C20.3 11.2 18.5 13.1 15.7 13.1H13.1L11.9 20.1C11.8 20.6 11.4 21 10.9 21H7Z"/>
-                        </svg>
-                        PayPal.me
-                    </div>
-                </a>
-                <div style="margin-top: 10px; font-size: 0.7rem; opacity: 0.5; color: #f8fafc;">
-                    Turvallinen maksu PayPalin kautta
-                </div>
-            </div>
-
 
             <button class="btn-primary" style="margin-top:20px;" onclick="toggleInfo(false)">SULJE JA PALAA PELIIN</button>
         </div>
@@ -241,20 +188,9 @@
     <script>
         // Logiikka pysyy samana (v3.6.1 pohjalta), jotta kaikki toiminnot säilyvät
         let peer = null, connections = [], isHost = false, myName = "", timerInterval = null;
-        let gameState = { players: [], activeIndex: null, isStarted: false, isPaused: false, totalTime: 0, bonus: 0, globalSeconds: 0 }; // Lisätty globalSeconds
+        let gameState = { players: [], activeIndex: null, isStarted: false, isPaused: false, totalTime: 0, bonus: 0 };
         let audioCtx = null;
         let lastKnownActiveIndex = null;
-
-        const noSleep = new NoSleep();
-
-        function initAllResources() {
-        // Aktivoi ääni, jos se ei ole jo aktiivinen
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-        // Aktivoi NoSleep (vaatii käyttäjän klikkauksen)
-        noSleep.enable();
-        console.log("Näytön päälläpito aktivoitu.");
-        }
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
         function toggleInfo(s) { document.getElementById('infoModal').classList.toggle('hidden', !s); }
@@ -281,51 +217,22 @@
                 document.getElementById('hostSetup').classList.add('hidden');
                 document.getElementById('gameRoom').classList.remove('hidden');
                 document.getElementById('hostControls').classList.remove('hidden');
-                document.getElementById('hostExitBtn').classList.remove('hidden');
-                document.getElementById('cancelRoomBtn').classList.remove('hidden');
-                document.getElementById('shareBtnContainer').classList.remove('hidden');
                 updateUI();
             });
             peer.on('connection', (c) => {
                 c.on('open', () => {
                     connections.push(c);
-                    
-                    // Kun yhteys katkeaa (pelaaja poistuu tai sulkee välilehden)
-                    c.on('close', () => {
-                        // Etsitään kuka poistui (nimi tallennettu yhteyteen aiemmin)
-                        const poistuja = c.peerPlayerName || "Tuntematon pelaaja";
-                        addChatMessage("SYSTEM", `${poistuja} poistui huoneesta.`);
-                        
-                        // Ilmoitetaan muille
-                        const msg = { type: 'CHAT', sender: 'SYSTEM', text: `${poistuja} poistui huoneesta.` };
-                        connections.forEach(conn => {
-                            if (conn.open) conn.send(msg);
-                        });
-                    });
-
                     c.on('data', (data) => {
-                        if (data.type === 'JOIN') { 
-                            c.peerPlayerName = data.name; // Tallennetaan nimi yhteyteen poistumisilmoitusta varten
-                            gameState.players.push({ name: data.name, time: gameState.totalTime, out: false, usedTotal: 0, turns: 0 }); 
-                            c.send({ type: 'STATE', state: gameState });
-                            broadcastState(); 
-                            addChatMessage("SYSTEM", `${data.name} liittyi peliin.`);
-                        }
-                        if (data.type === 'TURN_END') {
-                            handleTurnEnd(data.index);
-                        }
-                        // ... muut if-lauseet säilyvät ennallaan ...
-                        if (data.type === 'CHAT') { 
-                            addChatMessage(data.sender, data.text); 
-                            if(isHost) connections.forEach(conn => { if(conn !== c && conn.open) conn.send(data); }); 
-                        }
+                        if (data.type === 'JOIN') { gameState.players.push({ name: data.name, time: gameState.totalTime, out: false, usedTotal: 0, turns: 0 }); broadcastState(); }
+                        if (data.type === 'TURN_END') handleTurnEnd(data.index);
+                        if (data.type === 'SHOW_STATS') showStats();
+                        if (data.type === 'CHAT') { addChatMessage(data.sender, data.text); if(isHost) connections.forEach(conn => { if(conn !== c) conn.send(data); }); }
                     });
                 });
             });
         }
 
         function joinGame() {
-            window.history.replaceState({}, document.title, window.location.pathname);
             const id = document.getElementById('joinId').value.toUpperCase();
             if (id.length !== 4) return alert("Koodi!");
             myName = prompt("Nimesi:") || "Pelaaja";
@@ -336,7 +243,6 @@
                     conn.send({ type: 'JOIN', name: myName });
                     document.getElementById('menu').classList.add('hidden');
                     document.getElementById('gameRoom').classList.remove('hidden');
-                    document.getElementById('playerExitBtn').classList.remove('hidden');
                     document.getElementById('shortCode').innerText = id;
                 });
                 conn.on('data', (data) => {
@@ -347,23 +253,12 @@
             });
         }
 
-            function checkTurnSound() {
-                // Jos peli ei ole käynnissä tai vuoro on sama kuin viimeksi, ei tehdä mitään
-                if (gameState.activeIndex === null || gameState.activeIndex === lastKnownActiveIndex) return;
-
-                const activePlayer = gameState.players[gameState.activeIndex];
-                
-                // Tarkistetaan nimen perusteella, onko vuoro minun
-                if (activePlayer && activePlayer.name === myName) {
-                    // Pieni viive varmistaa, että audioCtx on varmasti hereillä
-                    setTimeout(() => {
-                        playBeep(880, 0.2);
-                        console.log("Oma vuoro - piippaus suoritettu");
-                    }, 50);
-                }
-                
+        function checkTurnSound() {
+            if (gameState.activeIndex !== null && gameState.activeIndex !== lastKnownActiveIndex) {
+                if (gameState.players[gameState.activeIndex].name === myName) playBeep(880, 0.2);
                 lastKnownActiveIndex = gameState.activeIndex;
             }
+        }
 
         function checkVoiceWarnings() {
             if (gameState.activeIndex === null) return;
@@ -373,28 +268,20 @@
             if (p.time === 10) speak(p.name + ", kymmenen sekuntia.");
         }
 
-            function handleTurnEnd(idx) {
-                // Tarkistetaan onko peli käynnissä ja onko vuoro painetun pelaajan
-                if (gameState.activeIndex !== idx || gameState.isPaused || !gameState.isStarted) return;
-
-                if (!isHost) {
-                    // Pelaajan laite: Lähetetään isännälle tieto vuoron päättymisestä
-                    if (myName === gameState.players[idx].name) {
-                        const hostConn = connections.find(c => c.open) || peer.connections[Object.keys(peer.connections)[0]][0];
-                        if (hostConn) {
-                            hostConn.send({ type: 'TURN_END', index: idx });
-                            console.log("Vuoronvaihtopyyntö lähetetty isännälle");
-                        }
-                    }
-                    return;
+        function handleTurnEnd(idx) {
+            if (!isHost) {
+                if (gameState.activeIndex === idx && myName === gameState.players[idx].name) {
+                    peer.connections[Object.keys(peer.connections)[0]][0].send({ type: 'TURN_END', index: idx });
                 }
-                
-                // Isännän laite: Suoritetaan vuoronvaihto
+                return;
+            }
+            if (gameState.activeIndex === idx && !gameState.isPaused && gameState.isStarted) {
                 gameState.players[idx].time += gameState.bonus;
                 gameState.players[idx].turns++;
                 clearInterval(timerInterval);
                 nextTurn(idx);
             }
+        }
 
         function nextTurn(idx) {
             let n = (idx + 1) % gameState.players.length;
@@ -408,14 +295,12 @@
             clearInterval(timerInterval);
             gameState.activeIndex = idx;
             gameState.isStarted = true;
-            checkTurnSound();
             broadcastState();
             timerInterval = setInterval(() => {
                 if (gameState.isPaused) return;
                 let p = gameState.players[gameState.activeIndex];
                 if (p.time > 0) {
                     p.time--; p.usedTotal++;
-                    gameState.globalSeconds++;
                     if (p.name === myName) checkVoiceWarnings();
                     if (p.time % 5 === 0) broadcastState();
                     updateUI();
@@ -428,47 +313,23 @@
         }
 
         function showStats() {
-            noSleep.disable(); // Sallii näytön sammua jälleen
             clearInterval(timerInterval);
             const content = document.getElementById('statsContent');
-            
-            // Lasketaan kaikkien pelaajien yhteensä käyttämä aika prosentteja varten
-            const totalUsedByAll = gameState.players.reduce((sum, p) => sum + p.usedTotal, 0);
-
-            let tableHTML = `<table style="width:100%; border-collapse:collapse; color:white; font-size:0.8rem;">
+            let tableHTML = `<table style="width:100%; border-collapse:collapse; color:white; font-size:0.9rem;">
                 <tr style="border-bottom: 2px solid var(--accent);">
-                    <th style="padding:8px; text-align:left;">Pelaaja</th>
-                    <th style="padding:8px; text-align:left;">Aika</th>
-                    <th style="padding:8px; text-align:center;">Osuus %</th>
-                    <th style="padding:8px; text-align:right;">Kesk/siirto</th>
+                    <th style="padding:10px; text-align:left;">Pelaaja</th>
+                    <th style="padding:10px; text-align:left;">Käyttö</th>
+                    <th style="padding:10px; text-align:left;">Kesk/siirto</th>
                 </tr>`;
-
             gameState.players.forEach(p => {
                 const avg = p.turns > 0 ? Math.round(p.usedTotal / p.turns) : 0;
-                const percent = totalUsedByAll > 0 ? Math.round((p.usedTotal / totalUsedByAll) * 100) : 0;
-                
                 tableHTML += `<tr style="border-bottom:1px solid #334155;">
-                    <td style="padding:8px;">${p.name}</td>
-                    <td style="padding:8px;">${Math.floor(p.usedTotal/60)}m ${p.usedTotal%60}s</td>
-                    <td style="padding:8px; text-align:center; color:var(--accent); font-weight:bold;">${percent}%</td>
-                    <td style="padding:8px; text-align:right;">${avg}s</td>
+                    <td style="padding:10px;">${p.name}</td>
+                    <td style="padding:10px;">${Math.floor(p.usedTotal/60)}m ${p.usedTotal%60}s</td>
+                    <td style="padding:10px;">${avg}s</td>
                 </tr>`;
             });
-            // Lasketaan pelin kesto ja lisätään taulukon perään PayPal-painike
-            const durationText = `<div style="margin-top:15px; text-align:center; font-size:0.8rem; opacity:0.7;">Pelin kokonaiskesto: ${Math.floor(gameState.globalSeconds/60)} min ${gameState.globalSeconds%60} sek</div>`;
-
-            const paypalSection = `
-            <div style="text-align: center; margin-top: 25px; padding: 15px; border: 1px dashed #253b80; background: rgba(30, 41, 59, 0.5); border-radius: 15px;">
-                <div style="margin-bottom: 10px; font-size: 0.8rem; color: #cbd5e1;">Piditkö sovelluksesta? Tue ylläpitoa:</div>
-                <a href="https://www.paypal.com/donate/?hosted_button_id=LC84JJ5JV9BB6" target="_blank" style="text-decoration: none; display: inline-block;">
-                    <div style="background: #0070ba; color: white; padding: 10px 20px; border-radius: 50px; font-weight: bold; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M7 21L7.9 15.1H6.3C5.5 15.1 4.8 14.5 4.7 13.7L3.1 3.7C3 3 3.5 2.4 4.2 2.4H13.6C16.8 2.4 19.1 3.1 20.2 4.6C20.9 5.5 21.1 6.7 20.8 8.1C20.3 11.2 18.5 13.1 15.7 13.1H13.1L11.9 20.1C11.8 20.6 11.4 21 10.9 21H7Z"/></svg>
-                        PayPal.me
-                    </div>
-                </a>
-            </div>`;
-
-content.innerHTML = tableHTML + `</table>` + durationText + paypalSection;
+            content.innerHTML = tableHTML + `</table>`;
             document.getElementById('statsModal').classList.remove('hidden');
             if (isHost) connections.forEach(c => c.send({ type: 'SHOW_STATS', state: gameState }));
         }
@@ -489,12 +350,6 @@ content.innerHTML = tableHTML + `</table>` + durationText + paypalSection;
                 `;
                 g.appendChild(card);
             });
-            // Päivitä yhteinen pelikello (HH:MM:SS)
-            const gH = Math.floor(gameState.globalSeconds / 3600);
-            const gM = Math.floor((gameState.globalSeconds % 3600) / 60);
-            const gS = gameState.globalSeconds % 60;
-            document.getElementById('totalGameClock').innerText = 
-            `${gH.toString().padStart(2, '0')}:${gM.toString().padStart(2, '0')}:${gS.toString().padStart(2, '0')}`;
         }
 
         function broadcastState() { if (isHost) { connections.forEach(c => c.send({ type: 'STATE', state: gameState })); updateUI(); } }
@@ -505,89 +360,8 @@ content.innerHTML = tableHTML + `</table>` + durationText + paypalSection;
         function movePlayer(idx, dir) { if (!isHost || gameState.isStarted) return; let n = idx + dir; if (n >= 0 && n < gameState.players.length) { [gameState.players[idx], gameState.players[n]] = [gameState.players[n], gameState.players[idx]]; broadcastState(); } }
         function sendChat() { const i = document.getElementById('chatInput'); if (!i.value.trim()) return; const d = { type: 'CHAT', sender: myName, text: i.value }; addChatMessage(myName, i.value); if (isHost) connections.forEach(c => c.send(d)); else if (peer.connections[Object.keys(peer.connections)[0]]) peer.connections[Object.keys(peer.connections)[0]][0].send(d); i.value = ""; }
         function addChatMessage(s, t) { const b = document.getElementById('chatBox'); const m = document.createElement('div'); m.innerHTML = `<span style="color:var(--accent)">${s}:</span> ${t}`; b.appendChild(m); b.scrollTop = b.scrollHeight; }
-        function showStarterSelection() { const list = document.getElementById('starterList'); list.innerHTML = '<h3>Kuka aloittaa?</h3>'; gameState.players.forEach((p, i) => { const b = document.createElement('button'); b.className = 'btn-primary'; b.innerText = p.name; b.onclick = () => { document.getElementById('starterModal').classList.add('hidden'); startTimer(i); document.getElementById('startBtn').classList.add('hidden');document.getElementById('cancelRoomBtn').classList.add('hidden'); }; list.appendChild(b); }); document.getElementById('starterModal').classList.remove('hidden'); }
-        function confirmExit() {
-            if (!isHost) return; // Varmistus: vain host voi ajaa tämän
-            if (confirm("Lopetetaanko peli? Tilastot näytetään kaikille.")) {
-                showStats();
-            }
-        }
-        function cancelHostSetup() {
-    document.getElementById('hostSetup').classList.add('hidden');
-    document.getElementById('menu').classList.remove('hidden');
-}
-
-        function copyRoomCode() {
-    const code = document.getElementById('shortCode').innerText;
-    if (code === "----") return; // Älä kopioi, jos peliä ei ole vielä luotu
-
-    // Kopioidaan teksti leikepöydälle
-    navigator.clipboard.writeText(code).then(() => {
-        const tooltip = document.getElementById('copyTooltip');
-        
-        // Näytetään "KOPIOITU!" -ilmoitus
-        tooltip.style.display = 'block';
-        
-        // Soitetaan pieni vahvistusääni (valinnainen)
-        if (audioCtx) playBeep(660, 0.05);
-
-        // Piilotetaan ilmoitus 2 sekunnin kuluttua
-        setTimeout(() => {
-            tooltip.style.display = 'none';
-        }, 2000);
-    }).catch(err => {
-        console.error('Kopiointi epäonnistui: ', err);
-    });
-}
-
-async function shareGame() {
-    const code = document.getElementById('shortCode').innerText;
-    // Rakennetaan suora liittymislinkki
-    const joinLink = window.location.origin + window.location.pathname + '?room=' + code;
-    
-    const shareData = {
-        title: 'Aikapankki Ultra',
-        text: `Tule mukaan peliin! Huoneen koodi on: ${code}\n\nLiity suoraan tästä:`,
-        url: joinLink
-    };
-
-    try {
-        if (navigator.share) {
-            await navigator.share(shareData);
-        } else {
-            navigator.clipboard.writeText(joinLink);
-            alert("Suora liittymislinkki kopioitu leikepöydälle!");
-        }
-    } catch (err) {
-        console.log('Jako epäonnistui', err);
-    }
-}
-
-function exitAndReload() {
-    if (confirm("Haluatko varmasti poistua?")) {
-        if (peer) peer.destroy(); // Katkaisee yhteydet heti
-        location.reload();
-    }
-}
-
-        // Tarkistetaan URL-parametrit heti kun sivu latautuu
-window.addEventListener('load', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomFromUrl = urlParams.get('room');
-    
-    if (roomFromUrl) {
-        const joinInput = document.getElementById('joinId');
-        if (joinInput) {
-            joinInput.value = roomFromUrl.toUpperCase();
-            // Korostetaan kenttää hetki, jotta käyttäjä huomaa koodin olevan siinä
-            joinInput.style.borderColor = 'var(--success)';
-            joinInput.style.boxShadow = '0 0 10px var(--success)';
-            
-            // Valinnainen: Voit jopa rullata näkymän suoraan liittymisnappiin
-            joinInput.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-});
+        function showStarterSelection() { const list = document.getElementById('starterList'); list.innerHTML = '<h3>Kuka aloittaa?</h3>'; gameState.players.forEach((p, i) => { const b = document.createElement('button'); b.className = 'btn-primary'; b.innerText = p.name; b.onclick = () => { document.getElementById('starterModal').classList.add('hidden'); startTimer(i); document.getElementById('startBtn').classList.add('hidden'); }; list.appendChild(b); }); document.getElementById('starterModal').classList.remove('hidden'); }
+        function confirmExit() { if(confirm("Lopetetaanko peli? Tilastot näytetään kaikille.")) showStats(); }
     </script>
 </body>
 </html>
