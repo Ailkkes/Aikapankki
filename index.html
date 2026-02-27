@@ -307,6 +307,7 @@
                         if (data.type === 'JOIN') { 
                             c.peerPlayerName = data.name; // Tallennetaan nimi yhteyteen poistumisilmoitusta varten
                             gameState.players.push({ name: data.name, time: gameState.totalTime, out: false, usedTotal: 0, turns: 0 }); 
+                            c.send({ type: 'STATE', state: gameState });
                             broadcastState(); 
                             addChatMessage("SYSTEM", `${data.name} liittyi peliin.`);
                         }
