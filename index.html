@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aikapankki Ultra v3.7.4</title>
+    <title>Aikapankki Ultra v3.8.0</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
     <style>
@@ -61,8 +61,15 @@
             <button class="btn-success" onclick="initAllResources(); joinGame()">LIITY PELIIN</button>
         </div>
 
-        <div id="hostSetup" class="hidden">
-            <h3>Pelin asetukset</h3>
+
+
+        <div id="hostSetup" class="container hidden">
+                <div id="recoveryZone" style="display: none; margin-bottom: 20px; padding: 15px; border: 2px solid var(--warning); border-radius: 12px; background: rgba(245, 158, 11, 0.1); text-align: center;">
+                <p style="font-size: 0.9rem; color: var(--warning); margin-bottom: 10px; font-weight: bold;">⚠️ Kesken jäänyt peli löytyi!</p>
+                <button class="btn-primary" onclick="recoverGame()" style="background: var(--warning); color: black; padding: 10px; width: 100%;">PALAUTA EDELLINEN TILANNE</button>
+            </div>
+            <h2 style="margin-top: 0;">Pelin asetukset</h2>
+
             <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 5px;">Pikavalinnat:</p>
             <div class="preset-grid">
                 <button class="preset-btn" onclick="applyPreset(5, 2)"><b>Blitz</b><br>5m + 2s</button>
@@ -75,10 +82,7 @@
             <input type="number" id="bonusTime" value="0">
             <label>Oma nimi:</label>
             <input type="text" id="hostName" placeholder="Isäntä">
-            <div id="recoveryZone" class="hidden" style="margin-bottom: 20px; padding: 10px; border: 1px dashed var(--warning); border-radius: 10px; background: rgba(245, 158, 11, 0.1);">
-    <p style="font-size: 0.8rem; color: var(--warning); margin-bottom: 8px;">Löytyi kesken jäänyt peli!</p>
-    <button class="btn-warning" onclick="recoverGame()" style="padding: 8px 15px; font-size: 0.8rem;">PALAUTA EDELLINEN TILANNE</button>
-</div>
+
             <button class="btn-success" onclick="initHost()">AVAA HUONE</button>
             <button class="btn-danger" style="background: transparent; border: 1px solid var(--danger); margin-top: 15px;" onclick="cancelHostSetup()">TAKASIN ALKUUN</button>
         </div>
@@ -182,14 +186,17 @@
                 <p><b>AI-Arkkitehti:</b> Gemini AI (Google)</p>
                 <p><b>Tekniikat:</b> HTML5, CSS3, JS (ES6), PeerJS, Web Speech API, NoSleep.</p>
                 <div class="changelog">
-                    v3.7.4 (Helmikuu 2026):<br>
+                    v3.8.0 (Maaliskuu 2026):<br>
                     + Maksimaalinen Info-sivu<br>
                     + Puhevaroitukset suomeksi<br>
                     + Pelikohtaiset esiasetukset<br>
                     + Paranneltu P2P-synkronointi<br>
                     + WakeLock<br>
                     + Pelikello<br>
-                    + Prosentit tilastoissa
+                    + Prosentit tilastoissa<br>
+                    + Pelisivulta vahingossa poistumista vaikeutettu<br>
+                    + Pelin tallennus välimuistiin<br>
+                    + Pelin palauttaminen edelliseen tilaan
                 </div>
             </div>
             
@@ -261,8 +268,11 @@
         }
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        
         function toggleInfo(s) { document.getElementById('infoModal').classList.toggle('hidden', !s); }
+        
         function showHostSetup() { document.getElementById('menu').classList.add('hidden'); document.getElementById('hostSetup').classList.remove('hidden'); }
+        
         function applyPreset(t, b) { document.getElementById('startTime').value = t; document.getElementById('bonusTime').value = b; }
 
         function speak(text) {
@@ -309,9 +319,21 @@
 
                     c.on('data', (data) => {
                         if (data.type === 'JOIN') { 
-                            c.peerPlayerName = data.name; // Tallennetaan nimi yhteyteen poistumisilmoitusta varten
-                            gameState.players.push({ name: data.name, time: gameState.totalTime, out: false, usedTotal: 0, turns: 0 }); 
-                            c.send({ type: 'STATE', state: gameState });
+                            c.peerPlayerName = data.name;
+                            
+                            // Tarkistetaan, onko pelaaja jo listalla (esim. palautettu peli)
+                            const existingPlayer = gameState.players.find(p => p.name === data.name);
+                            
+                            if (!existingPlayer) {
+                                // Uusi pelaaja
+                                gameState.players.push({ name: data.name, time: gameState.totalTime, out: false, usedTotal: 0, turns: 0 }); 
+                            } else {
+                                // Vanha pelaaja palaa (esim. F5 jälkeen) - ei lisätä uutta, 
+                                // päivitetään vain näkymä ja kerrotaan että hän on taas mukana.
+                                console.log(data.name + " liittyi takaisin.");
+                            }
+                            
+                            c.send({ type: 'STATE', state: gameState }); 
                             broadcastState(); 
                             addChatMessage("SYSTEM", `${data.name} liittyi peliin.`);
                         }
@@ -433,6 +455,10 @@
 
         function showStats() {
             noSleep.disable(); // Sallii näytön sammua jälleen
+            
+            // Tyhjennetään palautusmuisti, koska peli päättyi onnistuneesti
+            localStorage.removeItem('aikapankki_recovery_data');
+            
             clearInterval(timerInterval);
             const content = document.getElementById('statsContent');
             
@@ -501,26 +527,42 @@ content.innerHTML = tableHTML + `</table>` + durationText + paypalSection;
             `${gH.toString().padStart(2, '0')}:${gM.toString().padStart(2, '0')}:${gS.toString().padStart(2, '0')}`;
         }
 
-        function broadcastState() { if (isHost) { connections.forEach(c => c.send({ type: 'STATE', state: gameState })); updateUI(); // Tallennetaan tilanne selaimen muistiin palautusta varten
-        localStorage.setItem('aikapankki_recovery', JSON.stringify(gameState)); } }
+        function broadcastState() { 
+            if (isHost) { 
+                connections.forEach(c => { if(c.open) c.send({ type: 'STATE', state: gameState }); }); 
+                updateUI(); 
+            // Tallennetaan tilanne selaimen muistiin palautusta varten
+            localStorage.setItem('aikapankki_recovery_data', JSON.stringify(gameState)); 
+            } 
+        }
+        
         function playBeep(f, d) { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = f; g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d); o.start(); o.stop(audioCtx.currentTime + d); }
+        
         function togglePause() { gameState.isPaused = !gameState.isPaused; document.getElementById('pauseBtn').innerText = gameState.isPaused ? "JATKA" : "PAUSE"; broadcastState(); }
+        
         function addAllTime(s) { gameState.players.forEach(p => { if(!p.out) p.time += s; }); broadcastState(); }
+        
         function givePenalty(i) { if(isHost) { gameState.players[i].time = Math.max(0, gameState.players[i].time - 60); broadcastState(); } }
+        
         function movePlayer(idx, dir) { if (!isHost || gameState.isStarted) return; let n = idx + dir; if (n >= 0 && n < gameState.players.length) { [gameState.players[idx], gameState.players[n]] = [gameState.players[n], gameState.players[idx]]; broadcastState(); } }
+        
         function sendChat() { const i = document.getElementById('chatInput'); if (!i.value.trim()) return; const d = { type: 'CHAT', sender: myName, text: i.value }; addChatMessage(myName, i.value); if (isHost) connections.forEach(c => c.send(d)); else if (peer.connections[Object.keys(peer.connections)[0]]) peer.connections[Object.keys(peer.connections)[0]][0].send(d); i.value = ""; }
+        
         function addChatMessage(s, t) { const b = document.getElementById('chatBox'); const m = document.createElement('div'); m.innerHTML = `<span style="color:var(--accent)">${s}:</span> ${t}`; b.appendChild(m); b.scrollTop = b.scrollHeight; }
+        
         function showStarterSelection() { const list = document.getElementById('starterList'); list.innerHTML = '<h3>Kuka aloittaa?</h3>'; gameState.players.forEach((p, i) => { const b = document.createElement('button'); b.className = 'btn-primary'; b.innerText = p.name; b.onclick = () => { document.getElementById('starterModal').classList.add('hidden'); startTimer(i); document.getElementById('startBtn').classList.add('hidden');document.getElementById('cancelRoomBtn').classList.add('hidden'); }; list.appendChild(b); }); document.getElementById('starterModal').classList.remove('hidden'); }
+        
         function confirmExit() {
             if (!isHost) return; // Varmistus: vain host voi ajaa tämän
             if (confirm("Lopetetaanko peli? Tilastot näytetään kaikille.")) {
                 showStats();
             }
         }
+        
         function cancelHostSetup() {
-    document.getElementById('hostSetup').classList.add('hidden');
-    document.getElementById('menu').classList.remove('hidden');
-}
+            document.getElementById('hostSetup').classList.add('hidden');
+            document.getElementById('menu').classList.remove('hidden');
+        }
 
         function copyRoomCode() {
     const code = document.getElementById('shortCode').innerText;
@@ -604,38 +646,70 @@ window.addEventListener('load', () => {
 };
 
 
-        // Tarkista löytyykö palautettavaa peliä kun sivu latautuu
-window.addEventListener('load', () => {
-    const saved = localStorage.getItem('aikapankki_recovery');
-    if (saved) {
-        const recoveredData = JSON.parse(saved);
-        // Näytetään palautusnappi vain jos peli oli oikeasti käynnissä
-        if (recoveredData.isStarted && recoveredData.players.length > 0) {
-            document.getElementById('recoveryZone').classList.remove('hidden');
-        }
+// 1. Funktio joka tarkistaa muistin ja näyttää painikkeen
+function checkRecovery() {
+    const savedData = localStorage.getItem('aikapankki_recovery_data');
+    if (savedData) {
+        try {
+            const parsed = JSON.parse(savedData);
+            if (parsed && parsed.players && parsed.players.length > 0) {
+                // TÄRKEÄÄ: Pakotetaan host-näkymä auki, jotta painike on näkyvissä
+                document.getElementById('menu').classList.add('hidden');
+                document.getElementById('hostSetup').classList.remove('hidden');
+                
+                const zone = document.getElementById('recoveryZone');
+                if (zone) zone.style.display = 'block';
+                console.log("Palautusvalmius aktivoitu.");
+            }
+        } catch(e) { console.error("Virhe muistin luvussa", e); }
     }
-});
+}
 
+// Suoritetaan tarkistus heti kun sivu on ladattu
+window.addEventListener('load', checkRecovery);
+
+// 2. Korjattu recoverGame-funktio
 function recoverGame() {
-    const saved = localStorage.getItem('aikapankki_recovery');
-    if (!saved) return;
+    const savedData = localStorage.getItem('aikapankki_recovery_data');
+    if (!savedData) return;
 
-    const recoveredData = JSON.parse(saved);
-    
-    // Täytetään lomakkeen kentät vanhoilla arvoilla
-    document.getElementById('totalTime').value = Math.floor(recoveredData.totalTime / 60);
-    document.getElementById('bonusTime').value = recoveredData.bonus;
-    
-    // Luodaan huone uudelleen
-    initHost();
-    
-    // Korvataan tyhjä gameState palautetulla datalla
-    gameState = recoveredData;
-    gameState.isPaused = true; // Pysäytetään peli heti palautuksen jälkeen
-    
-    alert("Peli palautettu! Pyydä pelaajia liittymään uudella koodilla. Pelaajien nimet ja ajat on säilytetty.");
-    
-    document.getElementById('recoveryZone').classList.add('hidden');
+    try {
+        const recovered = JSON.parse(savedData);
+        
+        // Täytetään lomake, jotta initHost() osaa lukea oikeat pohja-ajat
+        document.getElementById('startTime').value = Math.floor(recovered.totalTime / 60);
+        document.getElementById('bonusTime').value = recovered.bonus;
+        
+        // Käynnistetään tekninen isännöinti (PeerJS jne.)
+        initHost();
+
+        // Odotetaan hetki että initHost valmistuu, sitten ylikirjoitetaan tila
+        setTimeout(() => {
+            gameState = recovered;
+            gameState.isPaused = true;
+            gameState.isStarted = true;
+
+            // Asetetaan kaikki pelaajat tilaan, jossa he voivat liittyä uudelleen
+            // mutta säilytetään heidän aikansa ja tilastonsa.
+            broadcastState();
+
+            // Varmistetaan näkymien vaihto
+            document.getElementById('hostSetup').classList.add('hidden');
+            document.getElementById('gameRoom').classList.remove('hidden');
+            document.getElementById('hostControls').classList.remove('hidden');
+            
+            // Piilotetaan aloitusnappi, koska peli on jo käynnissä
+            const startBtn = document.getElementById('startBtn');
+            if (startBtn) startBtn.classList.add('hidden');
+            
+            updateUI();
+            
+            const code = document.getElementById('shortCode').innerText;
+            alert("Peli palautettu! Uusi huonekoodi on: " + code + "\n\nPyydä pelaajia liittymään uudelleen.");
+        }, 800);
+    } catch(e) {
+        alert("Virhe palautuksessa.");
+    }
 }
 
     </script>
