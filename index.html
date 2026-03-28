@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aikapankki Ultra v3.8.0</title>
+    <title>Aikapankki Ultra v3.8.1</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
     <style>
@@ -186,7 +186,7 @@
                 <p><b>AI-Arkkitehti:</b> Gemini AI (Google)</p>
                 <p><b>Tekniikat:</b> HTML5, CSS3, JS (ES6), PeerJS, Web Speech API, NoSleep.</p>
                 <div class="changelog">
-                    v3.8.0 (Maaliskuu 2026):<br>
+                    v3.8.1 (Maaliskuu 2026):<br>
                     + Maksimaalinen Info-sivu<br>
                     + Puhevaroitukset suomeksi<br>
                     + Pelikohtaiset esiasetukset<br>
@@ -404,8 +404,8 @@
                 if (gameState.activeIndex !== idx || gameState.isPaused || !gameState.isStarted) return;
 
                 if (!isHost) {
-                    // Pelaajan laite: Lähetetään isännälle tieto vuoron päättymisestä
-                    if (myName === gameState.players[idx].name) {
+                    // Pelaajan laite: Lähetetään isännälle tieto vuoron päättymisestä vain jos aikaa on jäljellä
+                if (myName === p.name && p.time > 0) {
                         const hostConn = connections.find(c => c.open) || peer.connections[Object.keys(peer.connections)[0]][0];
                         if (hostConn) {
                             hostConn.send({ type: 'TURN_END', index: idx });
@@ -415,9 +415,19 @@
                     return;
                 }
                 
-                // Isännän laite: Suoritetaan vuoronvaihto
-                gameState.players[idx].time += gameState.bonus;
-                gameState.players[idx].turns++;
+                // --- ISÄNNÄN LAITE ALKAA TÄSTÄ ---
+    
+                // TÄMÄ LISÄYS: Jos aika on jo loppu tai nollassa, merkitään hävinneeksi eikä anneta bonusta
+                if (p.time <= 0) {
+                    p.time = 0;
+                    p.out = true;
+                    broadcastState();
+                    return; 
+                }
+
+                // Isännän laite: Suoritetaan normaali vuoronvaihto ja bonuksen lisäys
+                p.time += gameState.bonus;
+                p.turns++;
                 clearInterval(timerInterval);
                 nextTurn(idx);
             }
@@ -434,22 +444,48 @@
             clearInterval(timerInterval);
             gameState.activeIndex = idx;
             gameState.isStarted = true;
+
             checkTurnSound();
+            checkVoiceWarnings(); // Tarkistetaan ääniheti vuoron alussa (esim. jos aikaa < 1min)
             broadcastState();
+            
             timerInterval = setInterval(() => {
                 if (gameState.isPaused) return;
+                
                 let p = gameState.players[gameState.activeIndex];
+                
                 if (p.time > 0) {
-                    p.time--; p.usedTotal++;
+                    p.time--; 
+                    p.usedTotal++;
                     gameState.globalSeconds++;
+                    
                     if (p.name === myName) checkVoiceWarnings();
-                    if (p.time % 5 === 0) broadcastState();
+                
+                // Päivitetään tila muille 5 sekunnin välein tai kun aikaa on vähän    
+                    if (p.time % 5 === 0 || p.time <= 10) broadcastState();
+                    
                     updateUI();
-                } else {
-                    p.out = true;
-                    playBeep(200, 0.5);
-                    handleTurnEnd(gameState.activeIndex);
-                }
+                } 
+
+            // TARKISTUS: Jos aika meni juuri nollaan TAI se oli jo nolla
+            if (p.time <= 0) {
+                clearInterval(timerInterval);
+                p.time = 0; // Varmistetaan että aika on tasan nolla
+                p.out = true;
+                
+                // SOS-tyylinen hälytysääni (laskeva sarja)
+                playBeep(440, 0.2); 
+                setTimeout(() => playBeep(330, 0.2), 200);
+                setTimeout(() => playBeep(220, 0.4), 400);
+                
+                console.log("Pelaajalta loppui aika:", p.name);
+                
+                broadcastState();
+                updateUI();
+                
+                // Siirretään vuoro automaattisesti eteenpäin
+                handleTurnEnd(gameState.activeIndex);
+                                }
             }, 1000);
         }
 
