@@ -403,33 +403,37 @@
                 // Tarkistetaan onko peli käynnissä ja onko vuoro painetun pelaajan
                 if (gameState.activeIndex !== idx || gameState.isPaused || !gameState.isStarted) return;
 
+                const p = gameState.players[idx];
+
                 if (!isHost) {
                     // Pelaajan laite: Lähetetään isännälle tieto vuoron päättymisestä vain jos aikaa on jäljellä
                 if (myName === p.name && p.time > 0) {
-                        const hostConn = connections.find(c => c.open) || peer.connections[Object.keys(peer.connections)[0]][0];
+                        const hostConn = connections.find(c => c.open) || (peer.connections[Object.keys(peer.connections)[0]] ? peer.connections[Object.keys(peer.connections)[0]][0] : null);
                         if (hostConn) {
                             hostConn.send({ type: 'TURN_END', index: idx });
-                            console.log("Vuoronvaihtopyyntö lähetetty isännälle");
                         }
                     }
                     return;
                 }
                 
-                // --- ISÄNNÄN LAITE ALKAA TÄSTÄ ---
-    
-                // TÄMÄ LISÄYS: Jos aika on jo loppu tai nollassa, merkitään hävinneeksi eikä anneta bonusta
+                // ISÄNTÄ:
+                // Pysäytetään kello heti aluksi, jotta se ei tikitä enää prosessoinnin aikana
+                clearInterval(timerInterval);
+
+                // JOS AIKA ON LOPPU: Ei anneta bonusta, merkitään ulos ja siirrytään eteenpäin
                 if (p.time <= 0) {
                     p.time = 0;
                     p.out = true;
+                    nextTurn(idx);
                     broadcastState();
-                    return; 
+                    return;
                 }
 
                 // Isännän laite: Suoritetaan normaali vuoronvaihto ja bonuksen lisäys
                 p.time += gameState.bonus;
                 p.turns++;
-                clearInterval(timerInterval);
                 nextTurn(idx);
+                broadcastState();
             }
 
         function nextTurn(idx) {
@@ -469,9 +473,9 @@
 
             // TARKISTUS: Jos aika meni juuri nollaan TAI se oli jo nolla
             if (p.time <= 0) {
-                clearInterval(timerInterval);
                 p.time = 0; // Varmistetaan että aika on tasan nolla
                 p.out = true;
+                clearInterval(timerInterval);
                 
                 // SOS-tyylinen hälytysääni (laskeva sarja)
                 playBeep(440, 0.2); 
@@ -483,8 +487,8 @@
                 broadcastState();
                 updateUI();
                 
-                // Siirretään vuoro automaattisesti eteenpäin
-                handleTurnEnd(gameState.activeIndex);
+                // Siirretään vuoro automaattisesti eteenpäini ilman bonusta
+                nextTurn(idx);
                                 }
             }, 1000);
         }
